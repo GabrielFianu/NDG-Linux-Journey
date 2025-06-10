@@ -1,0 +1,164 @@
+ # Special Directories and Files. 
+
+## Introduction
+By performing this lab, students will learn about special permissions and different kinds of link files. You will perform the following tasks:
+
+View files with special permissions
+Create hard and soft links
+
+---
+
+### 1. Viewing Special Permissions
+In this task, you will find and understand the purpose of special permissions beyond read, write, and execute.
+
+Using the -d option for the ls command lists directory information; combined with the -l option it shows ownership and permissions for the directory files. 
+List the details of the /tmp and /var/tmp directories:
+
+ls -ld /tmp
+ls -ld /var/tmp
+
+![Image](https://github.com/user-attachments/assets/19b4b816-8239-409c-bd65-5b9d0e4b83e7)
+![Image](https://github.com/user-attachments/assets/5656a638-36ad-4216-a812-2deead9748b1)
+
+The /tmp and /var/tmp directories are read, write and executable for everyone. Besides the users' home directories, these two "temporary" directories are the locations in the filesystem where ordinary users can create new files or directories.
+This does pose a problem: if all users can create new files, they are also able to delete existing files. This is because the write permission on a directory grants users the ability to add and delete files in a directory.
+The t in the execute column for the others permissions indicates that this directory has the sticky bit permission set. This special permission means that even though everyone can add files in these directories, only the user who creates a file can delete that file.
+The root user is not affected by this permission as that account can delete all files in the directory, regardless of ownership.
+
+**View the permissions** on the /etc/shadow file:
+
+ls -l /etc/shadow
+The output shows that the root user has read and write permissions, members of the shadow group have read permission, and others have no permission on this file:
+
+![Image](https://github.com/user-attachments/assets/a4abf1d5-cf37-4ab1-8ca9-ceedba55e0f5)
+
+Like the other files found in the /etc directory, the /etc/shadow file contains host-specific configuration information. Specifically, the /etc/shadow file contains the encrypted passwords of all local user accounts and information about password aging (how long a password is valid). Since this is very sensitive information, access to this file is limited to the root user and commands executing as root, as well as members of the shadow group.
+When a user updates their password with the passwd command, the passwd command executes with a special permission called setuid. The setuid permission causes a file to execute as the user that owns the file, instead of the user that is actually running the command.
+If you are coming from a Microsoft Windows background, you can think of setuid to be like the Run as administrator feature provided in Windows.
+
+
+**View the permissions** of the /usr/bin/passwd file:
+
+ls -l /usr/bin/passwd
+The listing of this file shows:
+
+![Image](https://github.com/user-attachments/assets/29a6ba3e-1e7c-45c7-952c-54f18e077d24)
+
+**Notice** the s in the user's execute permission column. This indicates that this file has the setuid permission set, so it executes as the user who owns it (root) instead of the user running the command.
+Thus, the passwd command is able to update the /etc/shadow file, as it executes as the root user (recall that the root user can edit any file, regardless of the permissions on the file).
+
+
+**View the permissions** on the /usr/bin/wall command:
+
+ls -l /usr/bin/wall
+The output now shows the s in the execute column for the group:
+
+![Image](https://github.com/user-attachments/assets/00befbc9-2771-46d7-84f2-aea5ee1fa3dc)
+
+The s in the group execute column indicates that this file has the setgid permission set, so it executes as the group that owns it (tty) instead of the group of the user running the command. Thus, the wall command is able to write to all terminals (ttys) as it executes as the tty group.
+
+**Note**
+This is very similar to the setuid permission, but instead of running the command as the user owner of the program, the command runs as the group owner of the program.
+So far, you've seen three types of special permissions: sticky bit on a directory, setuid on an executable file and setgid on an executable file. As you have seen, these three types exist on a typical system.
+One more special permission type can be used; the setgid permission can also be applied to a directory:
+
+drwxrwsrwx. 2 root demo 4096 Oct 30 23:20 /tmp/data
+If you see the s in the execute column for the group that owns directory, then the directory has the setgid permission. When a directory has the setgid permission, then any new file or directory created in that directory will automatically be owned by the group that owns the directory, not by the group of the user who created the file.
+
+---
+
+### 2. Hard and Soft Links
+In this task, you will create and use hard and soft links.
+
+**Change to your home directory**
+
+cd
+![Image](https://github.com/user-attachments/assets/f14047c3-9c8f-4775-b5bc-07a13f667036)
+
+Create a file named source containing the text "data" by using redirection:
+
+echo "data" > source
+
+![Image](https://github.com/user-attachments/assets/dd65df7a-5886-4ff2-98ad-7ca95fa7de3e)
+
+
+Using the -i option with the ls command prints the index number of the file. View the details and inode information of the source file:
+
+ls -li source
+The highlighted output shows that the file has an inode number of 6689431 (this number will vary from one system to another) and a link count of 1:
+
+![Image](https://github.com/user-attachments/assets/38eaaf8f-b756-4c19-a11c-890175ea2364)
+
+The Linux operating system uses inodes to keep track of the information about a file. A directory entry associates an inode with a file name.
+Creating a hard link creates another directory entry associated with an existing inode, and will increase the link count number.
+Hard links allow you to use multiple names to refer to the same file. If any one of these names is removed, then the other names can still be used to refer to the file.
+In fact, these other names can even be used to create additional links. All of these names are considered equivalent as they all refer to an existing inode.
+
+**Important**
+You cannot create hard links to directories. Also, a hard link to a file must exist within the same filesystem (partition) as the file that it links to
+
+n order to create hard links, the ln command is used with two arguments. The first argument is an existing file name to link to, called a target, and the second argument is the new file name that will link to the target. Use the ln command to create a hard link. View the details and inode information of the source and new hard link file:
+
+ln source hardlink
+ls -li source hardlink
+
+![Image](https://github.com/user-attachments/assets/0bd79c20-eda6-4465-8a93-a640812bdaed)
+![Image](https://github.com/user-attachments/assets/18c0e6f7-8fca-4fca-ac55-cbf5ade84ba0)
+
+Notice that the hardlink file and the original source file share the same inode:
+
+
+Use the ln command to create another hard link to the source file. View the details and inode information of the source and new hard link files:
+
+ln hardlink hardlinktwo
+ls -li hardlink hardlinktwo source
+
+![Image](https://github.com/user-attachments/assets/8c7f0c32-ddd8-4fda-ad85-563a76500d8b)
+![Image](https://github.com/user-attachments/assets/75024176-c24e-4a5a-81fa-f21e80a16955)
+
+**Notice** the output continues to show that the hard links share the same inode and the link count increases on all links when a link is added**
+
+
+The rm command is used to remove files. Remove the last link that was created and list the source and hardlink files:
+
+rm hardlinktwo
+ls -li source hardlink
+Notice that the link count decreases when one of the hard-linked files is removed:
+
+sysadmin@localhost:~$ rm hardlinktwo                                          
+sysadmin@localhost:~$ ls -li source hardlink                              
+6689431 -rw-rw-r-- 2 sysadmin sysadmin 5 Feb 24 20:32 hardlink                  
+6689431 -rw-rw-r-- 2 sysadmin sysadmin 5 Feb 24 20:32 source           
+sysadmin@localhost:~$
+
+Remove the hardlink file and list the source file details:
+
+rm hardlink
+ls -li source
+
+![Image](https://github.com/user-attachments/assets/f3c132a1-5087-4062-bb40-7ca4f52f83eb)
+![Image](https://github.com/user-attachments/assets/a8565905-fc61-4c4c-8532-407e4d79283a)
+
+Another type of link that can be created is known as a symbolic link or soft link. Symbolic links do not increase the link count of files with which they are linked.
+**Symbolic link** files have their own inode and type of file. Instead of linking and sharing an inode, they link to the file name. Unlike hard links, soft links can be linked to directories and can cross devices and partitions to their targets.
+
+The -s option for the ln command creates a symbolic link instead of a hard link. Create a symbolic link to the source file and view the details of both files:
+
+ln -s source softlink
+ls -li source softlink
+
+![Image](https://github.com/user-attachments/assets/e665edf8-4aa1-49dd-8103-bb222c7a0957)
+![Image](https://github.com/user-attachments/assets/17ac79e3-9015-4af9-b358-d83080755ed0)
+
+The highlighted output shows that the softlink and the source file have different inodes. Notice that the link file type (indicated by the l preceding the permissions) is created when making a symbolic link. The permissions of the link are irrelevant, as it is the permissions of the target file that determine access:
+
+Create a symbolic link to the /proc directory and display the link:
+
+ln -s /proc crossdir
+ls -l crossdir
+
+![Image](https://github.com/user-attachments/assets/eb8f81f3-5aac-479a-9b32-2c46b6636f08)
+![Image](https://github.com/user-attachments/assets/f24f54cc-5815-427c-8831-3c8ab3f9d97d)
+
+The success of these commands shows that soft links can refer to directories, and that they can cross from one filesystem to another, which are two things that hard links cannot do:
+
